@@ -69,9 +69,9 @@ func (listing DirectoryListing) Process(options *Options) string {
 
 func (listing DirectoryListing) sort(options *Options) {
 	if options.SortBySize {
-		sort.Sort(sort.Reverse(BySize(listing)))
+		sort.SliceStable(listing, func(i, j int) bool { return listing[i].Size > listing[j].Size })
 	} else {
-		sort.Sort(ByName(listing))
+		sort.SliceStable(listing, func(i, j int) bool { return strings.ToLower(listing[i].Name) < strings.ToLower(listing[j].Name) })
 	}
 }
 
@@ -87,21 +87,3 @@ func GetDirectoryListing(dirname string) DirectoryListing {
 	}
 	return listing
 }
-
-// ByName implements sort.Interface for []FileInfo based on
-// the Name field.
-type ByName []FileInfo
-
-func (a ByName) Len() int      { return len(a) }
-func (a ByName) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
-func (a ByName) Less(i, j int) bool {
-	return strings.ToLower(a[i].Name) < strings.ToLower(a[j].Name)
-}
-
-// BySize implements sort.Interface for []FileInfo based on
-// the Size field.
-type BySize []FileInfo
-
-func (a BySize) Len() int           { return len(a) }
-func (a BySize) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
-func (a BySize) Less(i, j int) bool { return a[i].Size < a[j].Size }
