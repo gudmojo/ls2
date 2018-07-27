@@ -87,15 +87,15 @@ func renderSize(size int64, options *Options) string {
 }
 
 func formatHumanReadable(size int64) string {
-	if size < 1000 {
+	if size < 1024 {
 		return fmt.Sprint(size)
 	}
 	symbols := []string{"K", "M", "G", "T"}
 	symbol := ""
 	numbers := float64(size)
-	for i := 0; symbol != "T" && numbers > 1000.0; i++ {
+	for i := 0; symbol != "T" && numbers > 1024.0; i++ {
 		symbol = symbols[i]
-		numbers /= 1000
+		numbers /= 1024
 	}
 	return fmt.Sprintf("%.1f", numbers) + symbol
 
