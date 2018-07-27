@@ -40,10 +40,12 @@ func Test_human_readable_option_K_M_G_T(t *testing.T) {
 		FileInfo{"kfile", 6666},
 		FileInfo{"mfile", 6666666},
 		FileInfo{"gfile", 6666666666},
-		FileInfo{"tfile", 6666666666666}}
+		FileInfo{"tfile", 6666666666666},
+		FileInfo{"tfile2", 6666666666666666}}
 	assert.Equal(t, `file 66
 kfile 6.7K
 mfile 6.7M
 gfile 6.7G
-tfile 6.7T`, listing.Process(&options))
+tfile 6.7T
+tfile2 6666.7T`, listing.Process(&options))
 }
