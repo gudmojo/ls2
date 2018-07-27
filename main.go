@@ -14,6 +14,8 @@ func main() {
 	options := Options{}
 	flag.BoolVar(&options.SortBySize, "S", false, "sort by size")
 	flag.BoolVar(&options.ShowDetails, "l", false, "show details")
+	flag.BoolVar(&options.ShowHumanReadable, "h", false, "show human readable size")
+	flag.BoolVar(&options.ReverseSort, "r", false, "reverse sort order")
 	flag.Parse()
 	dirname := "./"
 	if rest := flag.Args(); len(rest) != 0 {
@@ -32,34 +34,71 @@ type FileInfo struct {
 }
 
 type Options struct {
-	ShowDetails bool
-	SortBySize  bool
+	ShowDetails       bool
+	SortBySize        bool
+	ShowHumanReadable bool
+	ReverseSort       bool
 }
 
 func (listing DirectoryListing) render(options *Options) string {
 	buffer := bytes.Buffer{}
-	for i, file := range listing {
-		if options.ShowDetails {
-			renderWithDetails(file, i, &buffer)
-		} else {
-			renderSimple(file, i, &buffer)
+	first := true
+	if options.ReverseSort {
+		for i := len(listing) - 1; i >= 0; i-- {
+			renderItem(options, listing[i], first, &buffer)
+			first = false
+		}
+	} else {
+		for _, file := range listing {
+			renderItem(options, file, first, &buffer)
+			first = false
 		}
 	}
 	return buffer.String()
 }
 
-func renderSimple(file FileInfo, index int, buffer *bytes.Buffer) {
-	if index != 0 {
+func renderItem(options *Options, file FileInfo, first bool, buffer *bytes.Buffer) {
+	if options.ShowDetails {
+		renderWithDetails(file, first, options, buffer)
+	} else {
+		renderSimple(file, first, buffer)
+	}
+}
+
+func renderSimple(file FileInfo, first bool, buffer *bytes.Buffer) {
+	if !first {
 		buffer.WriteString("    ")
 	}
 	buffer.WriteString(file.Name)
 }
 
-func renderWithDetails(file FileInfo, index int, buffer *bytes.Buffer) {
-	if index != 0 {
+func renderWithDetails(file FileInfo, first bool, options *Options, buffer *bytes.Buffer) {
+	if !first {
 		buffer.WriteString("\n")
 	}
-	buffer.WriteString(file.Name + " " + fmt.Sprint(file.Size))
+	buffer.WriteString(file.Name + " " + renderSize(file.Size, options))
+}
+
+func renderSize(size int64, options *Options) string {
+	if options.ShowHumanReadable {
+		return formatHumanReadable(size)
+	}
+	return fmt.Sprint(size)
+}
+
+func formatHumanReadable(size int64) string {
+	if size < 1000 {
+		return fmt.Sprint(size)
+	}
+	symbols := []string{"K", "M", "G", "T"}
+	symbol := ""
+	numbers := float64(size)
+	for i := 0; symbol != "T" && numbers > 1000.0; i++ {
+		symbol = symbols[i]
+		numbers /= 1000
+	}
+	return fmt.Sprintf("%.1f", numbers) + symbol
+
 }
 
 func (listing DirectoryListing) Process(options *Options) string {

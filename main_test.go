@@ -28,5 +28,22 @@ func Test_size_option_should_sort_files_by_size(t *testing.T) {
 
 func Test_details_option_should_output_size(t *testing.T) {
 	listing := DirectoryListing{FileInfo{"a", 3}, FileInfo{"b", 1}, FileInfo{"c", 2}}
-	assert.Equal(t, "a 3\nb 1\nc 2", listing.Process(&Options{ShowDetails: true}))
+	assert.Equal(t, `a 3
+b 1
+c 2`, listing.Process(&Options{ShowDetails: true}))
+}
+
+func Test_human_readable_option_K_M_G_T(t *testing.T) {
+	options := Options{ShowDetails: true, ShowHumanReadable: true, SortBySize: true, ReverseSort: true}
+	listing := DirectoryListing{
+		FileInfo{"file", 66},
+		FileInfo{"kfile", 6666},
+		FileInfo{"mfile", 6666666},
+		FileInfo{"gfile", 6666666666},
+		FileInfo{"tfile", 6666666666666}}
+	assert.Equal(t, `file 66
+kfile 6.7K
+mfile 6.7M
+gfile 6.7G
+tfile 6.7T`, listing.Process(&options))
 }

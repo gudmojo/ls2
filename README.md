@@ -8,6 +8,8 @@ This is just a fun learning project. Don't use this code for anything serious
  - Alphabetic ordering
  - Show details (file size): -l
  - Sort by file size: -S
+ - Show sizes in human readable format: -h
+ - Reverse sort order: -r
 
 ## Usage examples
 
