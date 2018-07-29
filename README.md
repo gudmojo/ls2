@@ -10,6 +10,7 @@ This is just a fun learning project. Don't use this code for anything serious
  - Sort by file size: -S
  - Show sizes in human readable format: -h
  - Reverse sort order: -r
+ - accepts multiple files and directories as command line arguments
 
 ## Usage examples
 

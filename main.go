@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"os"
 	"sort"
 	"strings"
 )
@@ -17,11 +18,20 @@ func main() {
 	flag.BoolVar(&options.ShowHumanReadable, "h", false, "show human readable size")
 	flag.BoolVar(&options.ReverseSort, "r", false, "reverse sort order")
 	flag.Parse()
-	dirname := "./"
-	if rest := flag.Args(); len(rest) != 0 {
-		dirname = rest[0]
+	targets := flag.Args()
+	if len(targets) == 0 {
+		targets = []string{"./"}
 	}
-	fmt.Printf(GetDirectoryListing(dirname).Process(&options))
+	fs := RealFileSystem{}
+	fmt.Print(SuperProcess(targets, &fs, &options))
+}
+
+func isDirectory(path string) bool {
+	file, err := os.Stat(path)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return file.IsDir()
 }
 
 // A DirectoryListing contains all the required data about files in a directory
@@ -29,8 +39,9 @@ type DirectoryListing []FileInfo
 
 // A FileInfo contains all the required data about a single file
 type FileInfo struct {
-	Name string
-	Size int64
+	Name  string
+	Size  int64
+	IsDir bool
 }
 
 type Options struct {
@@ -40,21 +51,19 @@ type Options struct {
 	ReverseSort       bool
 }
 
-func (listing DirectoryListing) render(options *Options) string {
-	buffer := bytes.Buffer{}
+func (listing DirectoryListing) render(options *Options, buffer *bytes.Buffer) {
 	first := true
 	if options.ReverseSort {
 		for i := len(listing) - 1; i >= 0; i-- {
-			renderItem(options, listing[i], first, &buffer)
+			renderItem(options, listing[i], first, buffer)
 			first = false
 		}
 	} else {
 		for _, file := range listing {
-			renderItem(options, file, first, &buffer)
+			renderItem(options, file, first, buffer)
 			first = false
 		}
 	}
-	return buffer.String()
 }
 
 func renderItem(options *Options, file FileInfo, first bool, buffer *bytes.Buffer) {
@@ -101,9 +110,9 @@ func formatHumanReadable(size int64) string {
 
 }
 
-func (listing DirectoryListing) Process(options *Options) string {
+func (listing DirectoryListing) Process(options *Options, buffer *bytes.Buffer) {
 	listing.sort(options)
-	return listing.render(options)
+	listing.render(options, buffer)
 }
 
 func (listing DirectoryListing) sort(options *Options) {
@@ -114,15 +123,61 @@ func (listing DirectoryListing) sort(options *Options) {
 	}
 }
 
-func GetDirectoryListing(dirname string) DirectoryListing {
-	listing := DirectoryListing{}
-	files, err := ioutil.ReadDir(dirname)
+type FileSystem interface {
+	ReadDir(string) DirectoryListing
+	Stat(string) FileInfo
+}
+
+type RealFileSystem struct{}
+
+func (fs *RealFileSystem) Stat(file string) FileInfo {
+	info, err := os.Stat(file)
 	if err != nil {
 		log.Fatal(err)
 	}
+	return FileInfo{info.Name(), info.Size(), info.IsDir()}
 
-	for _, f := range files {
-		listing = append(listing, FileInfo{f.Name(), f.Size()})
+}
+
+func (fs *RealFileSystem) ReadDir(dir string) DirectoryListing {
+	files, err := ioutil.ReadDir(dir)
+	if err != nil {
+		log.Fatal(err)
 	}
-	return listing
+	result := DirectoryListing{}
+	for _, item := range files {
+		result = append(result, FileInfo{item.Name(), item.Size(), item.IsDir()})
+	}
+	return result
+}
+
+func SuperProcess(inputs []string, fs FileSystem, options *Options) string {
+	buffer := bytes.Buffer{}
+	// Print inputs that are files
+	for _, input := range inputs {
+		var file FileInfo
+		file = fs.Stat(input)
+		if !file.IsDir {
+			DirectoryListing{file}.Process(options, &buffer)
+		}
+	}
+
+	// Print inputs that are directories
+	otherDirs := []string{}
+	for _, input := range inputs {
+		var file FileInfo
+		file = fs.Stat(input)
+		if file.IsDir {
+			otherDirs = append(otherDirs, input)
+		}
+	}
+	for _, dir := range otherDirs {
+		if len(otherDirs) > 1 {
+			buffer.WriteString("\n\n" + dir + ":\n\n")
+		}
+		listing := fs.ReadDir(dir)
+		listing.Process(options, &buffer)
+
+	}
+	return buffer.String()
 }
