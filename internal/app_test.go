@@ -1,4 +1,4 @@
-package main
+package internal
 
 import (
 	"github.com/stretchr/testify/assert"
@@ -26,14 +26,14 @@ func Test_directory_with_no_files_should_output_nothing(t *testing.T) {
 	inputs := []string{"dira"}
 	fileSystem := FakeFileSystem{map[string]FakeFile{
 		"dira": {FileInfo{"dira", 0, true}, []FileInfo{}}}}
-	assert.Equal(t, ``, SuperProcess(inputs, fileSystem, &Options{}))
+	assert.Equal(t, ``, ProcessInputs(inputs, fileSystem, &Options{}))
 }
 
 func Test_directory_with_one_file_should_output_its_name(t *testing.T) {
 	inputs := []string{"dira"}
 	fileSystem := FakeFileSystem{map[string]FakeFile{
 		"dira": {FileInfo{"dira", 0, true}, []FileInfo{{"myFile", 0, false}}}}}
-	assert.Equal(t, `myFile`, SuperProcess(inputs, fileSystem, &Options{}))
+	assert.Equal(t, `myFile`, ProcessInputs(inputs, fileSystem, &Options{}))
 }
 
 func Test_directory_with_three_files_should_output_their_names_alphabetically(t *testing.T) {
@@ -44,7 +44,7 @@ func Test_directory_with_three_files_should_output_their_names_alphabetically(t 
 			{"MyFile2", 0, false},
 			{"myFile1", 0, false},
 		}}}}
-	assert.Equal(t, `myFile1    MyFile2    myFile3`, SuperProcess(inputs, fileSystem, &Options{}))
+	assert.Equal(t, `myFile1    MyFile2    myFile3`, ProcessInputs(inputs, fileSystem, &Options{}))
 }
 
 func Test_size_option_should_sort_files_by_size(t *testing.T) {
@@ -55,7 +55,7 @@ func Test_size_option_should_sort_files_by_size(t *testing.T) {
 			{"b", 1, false},
 			{"c", 2, false},
 		}}}}
-	assert.Equal(t, `a    c    b`, SuperProcess(inputs, fileSystem, &Options{SortBySize: true}))
+	assert.Equal(t, `a    c    b`, ProcessInputs(inputs, fileSystem, &Options{SortBySize: true}))
 }
 
 func Test_details_option_should_output_size(t *testing.T) {
@@ -68,7 +68,7 @@ func Test_details_option_should_output_size(t *testing.T) {
 		}}}}
 	assert.Equal(t, `a 3
 b 1
-c 2`, SuperProcess(inputs, fileSystem, &Options{ShowDetails: true}))
+c 2`, ProcessInputs(inputs, fileSystem, &Options{ShowDetails: true}))
 
 }
 
@@ -89,7 +89,7 @@ kfile 6.5K
 mfile 6.4M
 gfile 6.2G
 tfile 6.1T
-tfile2 6063.3T`, SuperProcess(inputs, fileSystem, &options))
+tfile2 6063.3T`, ProcessInputs(inputs, fileSystem, &options))
 
 }
 
@@ -110,6 +110,6 @@ dira:
 
 dirb:
 
-c    d`, SuperProcess(inputs, fileSystem, &Options{}))
+c    d`, ProcessInputs(inputs, fileSystem, &Options{}))
 
 }
